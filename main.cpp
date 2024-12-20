@@ -5,18 +5,33 @@
 #include <string>
 #include <vector>
 #include <random>
+#include <windows.h>
+#include <memory>
 class Product {
 private:
-	std::string name;
-	float price;
-	float weight;
-	float priceForKg;
+	std::string name_;
+	float price_;
+	float weight_;
+	float priceForKg_;
+public:
+	Product(std::string name, float price, float weight):
+		name_(name),
+		price_(price),
+		weight_(weight),
+		priceForKg_(price*weight)
+	{}
 };
 class Supply {
 private:
-	std::string date;
-	std::vector<Product> products;
-	int factoryPriority;
+	std::string date_;
+	std::vector<Product> products_;
+	int factoryPriority_;
+public:
+	Supply(std::string date, std::vector<Product> products, int factPriority) :
+		date_(date),
+		products_(products),
+		factoryPriority_(factPriority)
+	{}
 };
 class Warehouse {
 private:
@@ -32,25 +47,42 @@ public:
 };
 class SystemForPlacingProducts {
 private:
-	Warehouse* ptrToWareHouse;
-	std::queue<Supply*> supplyQueue;
+	Warehouse* ptrToWarehouse;
+	std::queue<Supply> supplyQueue{};
 public:
+	SystemForPlacingProducts() :
+		supplyQueue()
+	{}
 	Supply** checkPlaceForSupply() {};
+	bool acceptSupply(Supply sup)
+	{
+		supplyQueue.push(sup);
+		std::cout << "pushed\n";
+		return true;
+	};
 };
 
 class Factory {
 private:
-	size_t priority;
-	SystemForPlacingProducts* ptrToPlacing;
+	size_t priority_;
+	SystemForPlacingProducts* ptrToPlacing_;
 public:
+	Factory(size_t priority, SystemForPlacingProducts* ptr):
+		priority_(priority),
+		ptrToPlacing_(ptr)
+	{}
 	void supplyProducts() {
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_int_distribution<> dis(1, 100);
-		int random_number = dis(gen);
-		int arr[101] = {};
-		
-			arr[dis(gen)]++;
+		while (true) {
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<> dis(1, 100);
+			int random_number = dis(gen);
+			Sleep(random_number*10);
+			std::string date = "";
+			std::vector<Product> products{};
+			int factoryPriority = 1;
+			ptrToPlacing_->acceptSupply(Supply{ date, products, factoryPriority });
+		}
 	};
 };
 class Truck {
@@ -76,7 +108,9 @@ private:
 };
 
 int main(){
-	Factory f;
-	f.supplyProducts();
+	SystemForPlacingProducts sys;
+	Factory f(1, &sys);
+	std::thread thread1(&Factory::supplyProducts, &f);
+	thread1.join();
 	return 0;
 }
