@@ -42,11 +42,22 @@ public:
 				return i;
 			}
 		}
+		return pointerToNextInserted;
 	};
 	Supply** getPtrToNextInserted() {
 		return pointerToNextInserted;
 	};
-	bool isEmpty() {};
+	bool isEmpty() 
+	{
+		for (size_t i = 0; i < capacity; i++)
+		{
+			if (warehouse_[i] != nullptr)
+			{
+				return false;
+			}
+		}
+		return true;
+	};
 	void placeSupply(Supply** place, Supply* newSupply) {};
 	void rejectSupply(Supply**) {};
 };
