@@ -22,11 +22,27 @@ private:
 	Supply* warehouse_[capacity] = {};
 	Supply** pointerToNextInserted;
 public:
-	Warehouse() :
+	Warehouse():
 		pointerToNextInserted(warehouse_)
 	{}
 	Supply* chooseSupply() {};
-	Supply** findPlaceForSupply() {};
+	Supply** findPlaceForSupply() 
+	{
+		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacity]; i++)
+		{
+			if (*i == nullptr)
+			{
+				return i;
+			}
+		}
+		for(Supply** i = &warehouse_[0]; i < pointerToNextInserted; i++)
+		{ 
+			if (*i == nullptr)
+			{
+				return i;
+			}
+		}
+	};
 	Supply** getPtrToNextInserted() {
 		return pointerToNextInserted;
 	};
