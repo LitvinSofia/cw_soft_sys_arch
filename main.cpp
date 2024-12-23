@@ -195,25 +195,33 @@ public:
 	}
 	bool atLeastOneIsAvailable() 
 	{
-		bool flag;
+		bool flag = false;
 		for (size_t i = 0; i < capacityOfGarage; i++)
 		{
 			flag = flag || garage_[i].isAvailable();
+			if (flag == true)
+			{
+				return flag;
+			}
 		}
 		return flag;
 	}
 };
 class WarehouseUnloadingSystem {
 private:
-	Garage* pointerToGarage;
-	Warehouse* pointerToWarehouse;
+	Garage* pointerToGarage_;
+	Warehouse* pointerToWarehouse_;
 public:
+	WarehouseUnloadingSystem(Garage* g, Warehouse* w):
+		pointerToGarage_(g),
+		pointerToWarehouse_(w)
+	{}
 	void run()
 	{
-		if (pointerToGarage->atLeastOneIsAvailable() && !pointerToWarehouse->isEmpty())
+		if (pointerToGarage_->atLeastOneIsAvailable() && !pointerToWarehouse_->isEmpty())
 		{
-			Supply* supplyToDeliver = pointerToWarehouse->chooseSupply();
-			Truck* truckToDeliver = pointerToGarage->chooseTruck();
+			Supply* supplyToDeliver = pointerToWarehouse_->chooseSupply();
+			Truck* truckToDeliver = pointerToGarage_->chooseTruck();
 			truckToDeliver->deliverSupply(supplyToDeliver);
 		}
 	}
@@ -225,6 +233,8 @@ int main() {
 	Factory f1(1, &sys);
 	Factory f2(2, &sys);
 	Factory f3(3, &sys);
+	Garage g;
+	WarehouseUnloadingSystem(&g,&h);
 	std::thread thread1(&Factory::supplyProducts, &f1);
 	std::thread thread2(&Factory::supplyProducts, &f2);
 	std::thread thread3(&Factory::supplyProducts, &f3);
