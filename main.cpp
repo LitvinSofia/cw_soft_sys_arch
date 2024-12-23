@@ -10,9 +10,9 @@
 constexpr size_t capacity = 20;
 class Supply {
 private:
-	int factoryPriority_;
+	size_t factoryPriority_;
 public:
-	Supply(int factPriority) :
+	Supply(size_t factPriority) :
 		factoryPriority_(factPriority)
 	{}
 };
@@ -28,6 +28,7 @@ public:
 	Supply* chooseSupply() {};
 	Supply** findPlaceForSupply() 
 	{
+		std::cout << "find\n";
 		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacity]; i++)
 		{
 			if (*i == nullptr)
@@ -58,13 +59,20 @@ public:
 		}
 		return true;
 	};
-	void placeSupply(Supply** place, Supply* newSupply) {};
-	void rejectSupply(Supply**) {};
+	void placeSupply(Supply** place, Supply* newSupply) 
+	{
+		//*place = 
+	}
+	void rejectSupply(Supply**)
+	{
+
+	}
 };
 class SystemForPlacingProducts {
 private:
 	Warehouse* ptrToWarehouse;
 	std::queue<Supply*> supplyQueue{};
+	std::mutex mutex_;
 public:
 	SystemForPlacingProducts(Warehouse* ptr) :
 		ptrToWarehouse(ptr)
@@ -78,18 +86,25 @@ public:
 				Supply** ptr = checkPlaceForSupply();
 				if (*ptr == nullptr) {
 					ptrToWarehouse->rejectSupply(ptr);
+					std::cout << "reject\n";
 				}
+				mutex_.lock();
 				ptrToWarehouse->placeSupply(ptr, supplyQueue.front());
+				std::cout << "place\n";
 				supplyQueue.pop();
+				mutex_.unlock();
 			}
 		}
 	}
 	Supply** checkPlaceForSupply()
 	{
+		std::cout << "check place for supply\n";
 		Supply** ptr1 = ptrToWarehouse->getPtrToNextInserted();
+		std::cout <<ptr1 << ": get ptr1\n";
 		if (ptr1 != nullptr)
 		{
 			Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
+			std::cout << ptr2 << ": get ptr2\n";
 			if (ptr1 == ptr2)
 			{
 				std::cout << "warehouse overflow\n";
@@ -99,7 +114,9 @@ public:
 	};
 	bool acceptSupply(Supply* sup)
 	{
+		mutex_.lock();
 		supplyQueue.push(sup);
+		mutex_.unlock();
 		std::cout << "pushed\n";
 		return true;
 	};
@@ -120,11 +137,9 @@ public:
 			std::mt19937 gen(rd());
 			std::uniform_int_distribution<> dis1(1, 100);
 			int random_number = dis1(gen);
-			Sleep(random_number * 10);
-			std::normal_distribution<> dis2(1, 1);
-			int factoryPriority = static_cast<int>(dis2(gen));
-			std::cout << factoryPriority << '\n';
-			ptrToPlacing_->acceptSupply(new Supply{ factoryPriority });
+			Sleep(random_number * 50);
+			std::cout << priority_<<'\n';
+			ptrToPlacing_->acceptSupply(new Supply{ priority_ });
 		}
 	};
 };
@@ -155,8 +170,12 @@ private:
 int main() {
 	Warehouse h;
 	SystemForPlacingProducts sys(&h);
-	Factory f(1, &sys);
-	std::thread thread1(&Factory::supplyProducts, &f);
+	Factory f1(1, &sys);
+	Factory f2(2, &sys);
+	Factory f3(3, &sys);
+	std::thread thread1(&Factory::supplyProducts, &f1);
+	std::thread thread2(&Factory::supplyProducts, &f2);
+	std::thread thread3(&Factory::supplyProducts, &f3);
 	thread1.join();
 	return 0;
 }
