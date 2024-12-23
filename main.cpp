@@ -7,7 +7,8 @@
 #include <random>
 #include <windows.h>
 #include <memory>
-constexpr size_t capacity = 20;
+constexpr size_t capacityOfWarehouse = 20;
+constexpr size_t capacityOfGarage = 10;
 class Supply {
 private:
 	size_t factoryPriority_;
@@ -19,7 +20,7 @@ public:
 class Warehouse {
 private:
 	size_t size_ = 0;
-	Supply* warehouse_[capacity] = {};
+	Supply* warehouse_[capacityOfWarehouse] = {};
 	Supply** pointerToNextInserted;
 public:
 	Warehouse() :
@@ -29,7 +30,7 @@ public:
 	Supply** findPlaceForSupply()
 	{
 		std::cout << "find\n";
-		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacity]; i++)
+		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacityOfWarehouse]; i++)
 		{
 			if (*i == nullptr)
 			{
@@ -60,7 +61,7 @@ public:
 	{
 		*place = newSupply;
 		size_++;
-		if (place < warehouse_ + capacity - 1)
+		if (place < warehouse_ + capacityOfWarehouse - 1)
 		{
 			pointerToNextInserted = place + 1;
 		}
@@ -163,12 +164,34 @@ public:
 };
 class Garage {
 private:
-	Truck* pointerToNextTruck;
-	std::vector<Truck> garage;
-	bool available = false;
+	Truck* pointerToNextTruck_;
+	Truck garage_[capacityOfGarage] = {};
+	bool available_ = false;
 public:
-	Truck* chooseTruck() {};
-	bool atLeastOneIsAvailable() {};
+	Truck* chooseTruck() 
+	{
+		Truck * pointerToReturn;
+		if (pointerToNextTruck_ < garage_ + capacityOfGarage - 1)
+		{
+			pointerToReturn = pointerToNextTruck_;
+			pointerToNextTruck_++;
+		}
+		else
+		{
+			pointerToReturn = pointerToNextTruck_;
+			pointerToNextTruck_ = garage_;
+		}
+		return pointerToReturn;
+	}
+	bool atLeastOneIsAvailable() 
+	{
+		bool flag;
+		for (size_t i = 0; i < capacityOfGarage; i++)
+		{
+			flag = flag || garage_[i].isAvailable();
+		}
+		return flag;
+	}
 };
 class WarehouseUnloadingSystem {
 private:
