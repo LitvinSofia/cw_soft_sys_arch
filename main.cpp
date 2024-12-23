@@ -22,11 +22,11 @@ private:
 	Supply* warehouse_[capacity] = {};
 	Supply** pointerToNextInserted;
 public:
-	Warehouse():
+	Warehouse() :
 		pointerToNextInserted(warehouse_)
 	{}
 	Supply* chooseSupply() {};
-	Supply** findPlaceForSupply() 
+	Supply** findPlaceForSupply()
 	{
 		std::cout << "find\n";
 		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacity]; i++)
@@ -36,8 +36,8 @@ public:
 				return i;
 			}
 		}
-		for(Supply** i = &warehouse_[0]; i < pointerToNextInserted; i++)
-		{ 
+		for (Supply** i = &warehouse_[0]; i < pointerToNextInserted; i++)
+		{
 			if (*i == nullptr)
 			{
 				return i;
@@ -48,18 +48,15 @@ public:
 	Supply** getPtrToNextInserted() {
 		return pointerToNextInserted;
 	};
-	bool isEmpty() 
+	bool isEmpty()
 	{
-		for (size_t i = 0; i < capacity; i++)
+		if (size_ > 0)
 		{
-			if (warehouse_[i] != nullptr)
-			{
-				return false;
-			}
+			return false;
 		}
 		return true;
 	};
-	void placeSupply(Supply** place, Supply* newSupply) 
+	void placeSupply(Supply** place, Supply* newSupply)
 	{
 		*place = newSupply;
 		size_++;
@@ -75,6 +72,7 @@ public:
 	}
 	void rejectSupply(Supply** placeToReject)
 	{
+		size_--;
 		std::cout << "supply was rejected\n";
 		delete* placeToReject;
 	}
@@ -111,12 +109,12 @@ public:
 	{
 		std::cout << "check place for supply\n";
 		Supply** ptr1 = ptrToWarehouse->getPtrToNextInserted();
-		std::cout <<ptr1 << ": get ptr1\n";
+		std::cout << ptr1 << ": get ptr1\n";
 		if (*ptr1 != nullptr)
 		{
 			Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
 			std::cout << ptr2 << ": get ptr2\n";
-			if (ptr1 == ptr2 )
+			if (ptr1 == ptr2)
 			{
 				std::cout << "warehouse overflow\n";
 			}
@@ -149,7 +147,7 @@ public:
 			std::uniform_int_distribution<> dis1(1, 100);
 			int random_number = dis1(gen);
 			Sleep(random_number * 50);
-			std::cout << priority_<<'\n';
+			std::cout << priority_ << '\n';
 			ptrToPlacing_->acceptSupply(new Supply{ priority_ });
 		}
 	};
@@ -158,7 +156,7 @@ class Truck {
 private:
 	bool available;
 public:
-	void deliverSupply() {
+	void deliverSupply(Supply* supply) {
 		//delete
 	};
 	bool isAvailable() {};
@@ -176,6 +174,16 @@ class WarehouseUnloadingSystem {
 private:
 	Garage* pointerToGarage;
 	Warehouse* pointerToWarehouse;
+public:
+	void run()
+	{
+		if (pointerToGarage->atLeastOneIsAvailable() && !pointerToWarehouse->isEmpty())
+		{
+			Supply* supplyToDeliver = pointerToWarehouse->chooseSupply();
+			Truck* truckToDeliver = pointerToGarage->chooseTruck();
+			truckToDeliver->deliverSupply(supplyToDeliver);
+		}
+	}
 };
 
 int main() {
