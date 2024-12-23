@@ -155,12 +155,22 @@ public:
 };
 class Truck {
 private:
-	bool available;
+	bool available_;
 public:
 	void deliverSupply(Supply* supply) {
-		//delete
+		std::cout << "deliver supply\n";
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dis1(1, 100);
+		int random_number = dis1(gen);
+		Sleep(random_number * 50);
+		std::cout << " supply " << &supply << "was delivered\n";
+		delete supply;
 	};
-	bool isAvailable() {};
+	bool isAvailable() 
+	{
+		return available_;
+	}
 };
 class Garage {
 private:
