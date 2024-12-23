@@ -18,7 +18,7 @@ public:
 };
 class Warehouse {
 private:
-	size_t size_;
+	size_t size_ = 0;
 	Supply* warehouse_[capacity] = {};
 	Supply** pointerToNextInserted;
 public:
@@ -61,11 +61,22 @@ public:
 	};
 	void placeSupply(Supply** place, Supply* newSupply) 
 	{
-		//*place = 
+		*place = newSupply;
+		size_++;
+		if (place < warehouse_ + capacity - 1)
+		{
+			pointerToNextInserted = place + 1;
+		}
+		else
+		{
+			pointerToNextInserted = warehouse_;
+		}
+		std::cout << "inserted new supply\n";
 	}
-	void rejectSupply(Supply**)
+	void rejectSupply(Supply** placeToReject)
 	{
-
+		std::cout << "supply was rejected\n";
+		delete* placeToReject;
 	}
 };
 class SystemForPlacingProducts {
@@ -84,7 +95,7 @@ public:
 			if (!supplyQueue.empty())
 			{
 				Supply** ptr = checkPlaceForSupply();
-				if (*ptr == nullptr) {
+				if (*ptr != nullptr) {
 					ptrToWarehouse->rejectSupply(ptr);
 					std::cout << "reject\n";
 				}
@@ -101,11 +112,11 @@ public:
 		std::cout << "check place for supply\n";
 		Supply** ptr1 = ptrToWarehouse->getPtrToNextInserted();
 		std::cout <<ptr1 << ": get ptr1\n";
-		if (ptr1 != nullptr)
+		if (*ptr1 != nullptr)
 		{
 			Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
 			std::cout << ptr2 << ": get ptr2\n";
-			if (ptr1 == ptr2)
+			if (ptr1 == ptr2 )
 			{
 				std::cout << "warehouse overflow\n";
 			}
@@ -176,6 +187,7 @@ int main() {
 	std::thread thread1(&Factory::supplyProducts, &f1);
 	std::thread thread2(&Factory::supplyProducts, &f2);
 	std::thread thread3(&Factory::supplyProducts, &f3);
+	std::thread thread4(&SystemForPlacingProducts::run, &sys);
 	thread1.join();
 	return 0;
 }
