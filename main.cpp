@@ -202,19 +202,28 @@ public:
 size_t Factory::id_ = 0;
 class Truck {
 private:
+	size_t id_ = 0;
 	bool available_ = true;
 	Supply* supplyToDeliver_ = nullptr;
 public:
+	void setId(size_t id)
+	{
+		id_ = id;
+	}
+	size_t getId()
+	{
+		return id_;
+	}
 	void deliverSupply(Supply* supply)
 	{
 		this->setAvailable(false);
-		std::cout << "deliver supply with id = " << supply->getId() << "\n";
+		std::cout << "truck " << id_ << " delivers supply with id = " << supply->getId() << "\n";
 		std::random_device rd;
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis1(1, 100);
 		int random_number = dis1(gen);
 		Sleep(random_number * 50);
-		std::cout << " supply " << supply->getId() << " was delivered\n";
+		std::cout << " supply " << supply->getId() << " was delivered by truck " << id_ << "\n";
 		delete supply;
 		supplyToDeliver_ = nullptr;
 		this->setAvailable(true);
@@ -333,17 +342,7 @@ int main() {
 	Factory f1(1, &sys1);
 	Factory f2(2, &sys1);
 	Factory f3(3, &sys1);
-	Truck truck1{};
-	Truck truck2{};
-	Truck truck3{};
-	Truck truck4{};
-	Truck truck5{};
-	Truck truck6{};
-	Truck truck7{};
-	Truck truck8{};
-	Truck truck9{};
-	Truck truck10{};
-	Truck arr[capacityOfGarage] = { truck1 , truck2, truck3, truck4, truck5, truck6, truck7, truck8, truck9, truck10};
+	Truck arr[capacityOfGarage] = { Truck{} };
 	Garage g(arr);
 	WarehouseUnloadingSystem sys2(&g, &h);
 	std::thread thread1(&Factory::supplyProducts, &f1);
@@ -352,6 +351,10 @@ int main() {
 	std::thread thread4(&SystemForPlacingProducts::run, &sys1);
 	std::thread thread5(&WarehouseUnloadingSystem::run, &sys2);
 	std::thread threads[capacityOfGarage] = {};
+	for (size_t i = 0; i < capacityOfGarage; i++)
+	{
+		g.getGarage()[i].setId(i);
+	}
 	for (size_t i = 0; i < capacityOfGarage; i++)
 	{
 		threads[i] = std::thread{ &Truck::run, &(g.getGarage()[i]) };
