@@ -10,7 +10,7 @@
 #include <limits>
 #undef max
 constexpr size_t capacityOfWarehouse = 20;
-constexpr size_t capacityOfGarage = 10;
+constexpr size_t capacityOfGarage = 1;
 constexpr size_t max_priority = std::numeric_limits<size_t>::max();
 constexpr size_t max_id = std::numeric_limits<size_t>::max();
 class Supply {
@@ -26,7 +26,7 @@ public:
 	{
 		return id_;
 	}
-	size_t getFactoryPriority() 
+	size_t getFactoryPriority()
 	{
 		return factoryPriority_;
 	}
@@ -45,13 +45,15 @@ public:
 		size_t priority = max_priority;
 		size_t id = max_id;
 		Supply* supply = nullptr;
+		size_t index = 0;
 		for (size_t i = 0; i < capacityOfWarehouse; i++)
 		{
 			if (warehouse_[i] != nullptr && warehouse_[i]->getFactoryPriority() < priority)
 			{
 				priority = warehouse_[i]->getFactoryPriority();
 				id = warehouse_[i]->getId();
-				supply = warehouse_[i];	
+				supply = warehouse_[i];
+				index = i;
 			}
 			else if (warehouse_[i] != nullptr && warehouse_[i]->getFactoryPriority() == priority)
 			{
@@ -60,15 +62,17 @@ public:
 					supply = warehouse_[i];
 					priority = warehouse_[i]->getFactoryPriority();
 					id = warehouse_[i]->getId();
+					index = i;
 				}
 			}
 		}
 		size_--;
+		warehouse_[index] = nullptr;
 		return supply;
 	}
 	Supply** findPlaceForSupply()
 	{
-		std::cout << "find\n";
+		std::cout << "find place for supply\n";
 		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacityOfWarehouse]; i++)
 		{
 			if (*i == nullptr)
@@ -108,12 +112,12 @@ public:
 		{
 			pointerToNextInserted = warehouse_;
 		}
-		std::cout << "inserted new supply\n";
+		std::cout << "inserted new supply to warehouse\n";
 	}
 	void rejectSupply(Supply** placeToReject)
 	{
 		size_--;
-		std::cout << "supply was rejected\n";
+		std::cout << "supply was rejected from warehouse\n";
 		delete* placeToReject;
 	}
 };
@@ -139,7 +143,6 @@ public:
 				}
 				mutex_.lock();
 				ptrToWarehouse->placeSupply(ptr, supplyQueue.front());
-				std::cout << "place\n";
 				supplyQueue.pop();
 				mutex_.unlock();
 			}
@@ -183,13 +186,14 @@ public:
 	{}
 	void supplyProducts() {
 		while (true) {
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_int_distribution<> dis1(1, 5);
-			int random_number = dis1(gen);
-			Sleep(random_number * 1000);
-			std::cout << priority_ << '\n';
-			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++});
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> dis1(1, 5);
+		int random_number = dis1(gen);
+		Sleep(random_number * 1000);
+		std::cout << priority_ << '\n';
+		ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
+		Sleep(random_number * 100000);
 		}
 	};
 };
@@ -197,8 +201,10 @@ size_t Factory::id_ = 0;
 class Truck {
 private:
 	bool available_ = true;
+	Supply* supplyToDeliver_ = nullptr;
 public:
 	void deliverSupply(Supply* supply) {
+		this->setAvailable(false);
 		std::cout << "deliver supply\n";
 		std::random_device rd;
 		std::mt19937 gen(rd());
@@ -207,6 +213,7 @@ public:
 		Sleep(random_number * 50);
 		std::cout << " supply " << supply->getId() << " was delivered\n";
 		delete supply;
+		supplyToDeliver_ = nullptr;
 		this->setAvailable(true);
 	};
 	bool isAvailable()
@@ -217,11 +224,29 @@ public:
 	{
 		available_ = available;
 	}
+	void setSupply(Supply* supply)
+	{
+		this->supplyToDeliver_ = supply;
+	}
+	void run()
+	{
+		while (true)
+		{
+			if (this->available_ == true && this->supplyToDeliver_ != nullptr)
+			{
+				this->deliverSupply(supplyToDeliver_);
+			}
+			else
+			{
+				Sleep(1);
+			}
+		}
+	}
 };
 class Garage {
 private:
 	Truck* pointerToNextTruck_;
-	Truck garage_[capacityOfGarage] = {};
+	Truck garage_[capacityOfGarage];
 	bool available_ = false;
 public:
 	Garage(Truck arr[]) :
@@ -229,21 +254,35 @@ public:
 	{
 		std::copy(arr, arr + capacityOfGarage, garage_);
 	}
-	Truck* chooseTruck()
+	Truck* getGarage()
 	{
-		Truck* pointerToReturn;
-		if (pointerToNextTruck_ < garage_ + capacityOfGarage - 1)
+		return garage_;
+	}
+	Truck* chooseTruck()//учесть что фура мб занята
+	{
+		for (Truck* i = pointerToNextTruck_; i < garage_ + capacityOfGarage - 1; i++)
 		{
-			pointerToReturn = pointerToNextTruck_;
-			pointerToNextTruck_++;
+			if (i->isAvailable() == true)
+			{
+				pointerToNextTruck_ = i + 1;
+				return i;
+			}
 		}
-		else
+		if (garage_[capacityOfGarage - 1].isAvailable() == true)
 		{
-			pointerToReturn = pointerToNextTruck_;
 			pointerToNextTruck_ = garage_;
+			return &garage_[capacityOfGarage - 1];
 		}
-		pointerToReturn->setAvailable(false);
-		return pointerToReturn;
+		for (Truck* i = garage_; i < pointerToNextTruck_; i++)
+		{
+			if (i->isAvailable() == true)
+			{
+				pointerToNextTruck_++;
+				return i;
+			}
+		}
+		std::cout << "there is no free trucks\n";
+		return nullptr;
 	}
 	bool atLeastOneIsAvailable()
 	{
@@ -275,29 +314,33 @@ public:
 			{
 				Supply* supplyToDeliver = pointerToWarehouse_->chooseSupply();
 				Truck* truckToDeliver = pointerToGarage_->chooseTruck();
-				truckToDeliver->deliverSupply(supplyToDeliver);
+				truckToDeliver->setSupply(supplyToDeliver);
+			}
+			else
+			{
+				Sleep(1);
 			}
 		}
 	}
 };
 
 int main() {
-	Warehouse h;
+	Warehouse h{};
 	SystemForPlacingProducts sys1(&h);
 	Factory f1(1, &sys1);
 	Factory f2(2, &sys1);
 	Factory f3(3, &sys1);
-	Truck truck1;
-	Truck truck2;
-	Truck truck3;
-	Truck truck4;
-	Truck truck5;
-	Truck truck6;
-	Truck truck7;
-	Truck truck8;
-	Truck truck9;
-	Truck truck10;
-	Truck arr[capacityOfGarage] = {truck1, truck2, truck3, truck4, truck5, truck6, truck7, truck8, truck9, truck10};
+	Truck truck1{};
+	/*Truck truck2{};
+	Truck truck3{};
+	Truck truck4{};
+	Truck truck5{};
+	Truck truck6{};
+	Truck truck7{};
+	Truck truck8{};
+	Truck truck9{};
+	Truck truck10{};*/
+	Truck arr[capacityOfGarage] = { truck1 };//, truck2, truck3, truck4, truck5, truck6, truck7, truck8, truck9, truck10};
 	Garage g(arr);
 	WarehouseUnloadingSystem sys2(&g, &h);
 	std::thread thread1(&Factory::supplyProducts, &f1);
@@ -305,6 +348,11 @@ int main() {
 	std::thread thread3(&Factory::supplyProducts, &f3);
 	std::thread thread4(&SystemForPlacingProducts::run, &sys1);
 	std::thread thread5(&WarehouseUnloadingSystem::run, &sys2);
+	std::thread threads[capacityOfGarage] = {};
+	for (size_t i = 0; i < capacityOfGarage; i++)
+	{
+		threads[i] = std::thread{ &Truck::run, &(g.getGarage()[i]) };
+	}
 	thread1.join();
 	return 0;
 }
