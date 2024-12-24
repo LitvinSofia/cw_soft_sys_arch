@@ -8,11 +8,23 @@
 #include <windows.h>
 #include <memory>
 #include <limits>
+#include <map>
 #undef max
-constexpr size_t capacityOfWarehouse = 20;
+std::mutex mutexForCout;
+constexpr size_t capacityOfWarehouse = 5;
 constexpr size_t capacityOfGarage = 10;
 constexpr size_t max_priority = std::numeric_limits<size_t>::max();
 constexpr size_t max_id = std::numeric_limits<size_t>::max();
+struct FactoryStatistic {
+	uint32_t allRequests{};
+	uint32_t successfulRequests{};
+	uint32_t failedRequests{};
+	std::vector<double> durationsProcess{};
+	std::vector<double> durationsWait{};
+};
+std::map<uint32_t, FactoryStatistic> statisticByUser;
+std::mutex statMut;
+
 class Supply {
 private:
 	size_t id_;
@@ -72,7 +84,6 @@ public:
 	}
 	Supply** findPlaceForSupply()
 	{
-		std::cout << "find place for supply\n";
 		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacityOfWarehouse]; i++)
 		{
 			if (*i == nullptr)
@@ -100,8 +111,26 @@ public:
 		}
 		return true;
 	};
+	void printWarehouse()
+	{
+		mutexForCout.lock();
+		std::cout << "WAREHOUSE: ";
+		for (size_t i = 0; i < capacityOfWarehouse; i++)
+		{
+			if (warehouse_[i] != nullptr)
+			{
+				std::cout << warehouse_[i]->getId() << ' ';
+			}
+			else {
+				std::cout << " _ ";
+			}
+		}
+		std::cout << '\n';
+		mutexForCout.unlock();
+	}
 	void placeSupply(Supply** place, Supply* newSupply)
 	{
+		printWarehouse();
 		*place = newSupply;
 		size_++;
 		if (place < warehouse_ + capacityOfWarehouse - 1)
@@ -112,13 +141,22 @@ public:
 		{
 			pointerToNextInserted = warehouse_;
 		}
-		std::cout << "inserted new supply to warehouse\n";
+		mutexForCout.lock();
+		std::cout << "inserted suppply " << newSupply->getId() << " in warehouse\n";
+		mutexForCout.unlock();
+		printWarehouse();
 	}
 	void rejectSupply(Supply** placeToReject)
 	{
 		size_--;
+		printWarehouse();
+		mutexForCout.lock();
 		std::cout << "supply was rejected from warehouse\n";
-		delete* placeToReject;
+		mutexForCout.unlock();
+		Supply* ptr = *placeToReject;
+		*placeToReject = nullptr;
+		delete ptr;
+		printWarehouse();
 	}
 };
 class SystemForPlacingProducts {
@@ -141,7 +179,9 @@ public:
 					size_t id = 0;
 					id = (*ptr)->getId();
 					ptrToWarehouse->rejectSupply(ptr);
+					mutexForCout.lock();
 					std::cout << "rejected supply with id = " << id << "\n";
+					mutexForCout.unlock();
 				}
 				mutex_.lock();
 				ptrToWarehouse->placeSupply(ptr, supplyQueue.front());
@@ -152,13 +192,10 @@ public:
 	}
 	Supply** checkPlaceForSupply()
 	{
-		std::cout << "check place for supply\n";
 		Supply** ptr1 = ptrToWarehouse->getPtrToNextInserted();
-		std::cout << ptr1 << ": get ptr1\n";
 		if (*ptr1 != nullptr)
 		{
 			Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
-			std::cout << ptr2 << ": get ptr2\n";
 			if (ptr1 == ptr2)
 			{
 				std::cout << "warehouse overflow\n";
@@ -172,7 +209,9 @@ public:
 		mutex_.lock();
 		supplyQueue.push(sup);
 		mutex_.unlock();
+		mutexForCout.lock();
 		std::cout << "supply " << sup->getId() << " was accepted\n";
+		mutexForCout.unlock();
 		return true;
 	}
 };
@@ -194,7 +233,7 @@ public:
 			std::uniform_int_distribution<> dis1(1, 5);
 			int random_number = dis1(gen);
 			Sleep(random_number * 1000);
-			std::cout << id_ << '\n';
+			std::cout <<  "Factory priority: " << priority_ <<" supply id: " << id_ << '\n';
 			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
 		}
 	};
@@ -222,7 +261,7 @@ public:
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis1(1, 100);
 		int random_number = dis1(gen);
-		Sleep(random_number * 50);
+		Sleep(random_number * 1000);
 		std::cout << " supply " << supply->getId() << " was delivered by truck " << id_ << "\n";
 		delete supply;
 		supplyToDeliver_ = nullptr;
