@@ -10,7 +10,7 @@
 #include <limits>
 #undef max
 constexpr size_t capacityOfWarehouse = 20;
-constexpr size_t capacityOfGarage = 1;
+constexpr size_t capacityOfGarage = 10;
 constexpr size_t max_priority = std::numeric_limits<size_t>::max();
 constexpr size_t max_id = std::numeric_limits<size_t>::max();
 class Supply {
@@ -138,8 +138,10 @@ public:
 			{
 				Supply** ptr = checkPlaceForSupply();
 				if (*ptr != nullptr) {
+					size_t id = 0;
+					id = (*ptr)->getId();
 					ptrToWarehouse->rejectSupply(ptr);
-					std::cout << "reject\n";
+					std::cout << "rejected supply with id = " << id << "\n";
 				}
 				mutex_.lock();
 				ptrToWarehouse->placeSupply(ptr, supplyQueue.front());
@@ -164,15 +166,15 @@ public:
 			return ptr2;
 		}
 		return ptr1;
-	};
+	}
 	bool acceptSupply(Supply* sup)
 	{
 		mutex_.lock();
 		supplyQueue.push(sup);
 		mutex_.unlock();
-		std::cout << "pushed\n";
+		std::cout << "supply " << sup->getId() << " was accepted\n";
 		return true;
-	};
+	}
 };
 class Factory {
 private:
@@ -184,16 +186,16 @@ public:
 		priority_(priority),
 		ptrToPlacing_(ptr)
 	{}
-	void supplyProducts() {
+	void supplyProducts()
+	{
 		while (true) {
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_int_distribution<> dis1(1, 5);
-		int random_number = dis1(gen);
-		Sleep(random_number * 1000);
-		std::cout << priority_ << '\n';
-		ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
-		Sleep(random_number * 100000);
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<> dis1(1, 5);
+			int random_number = dis1(gen);
+			Sleep(random_number * 1000);
+			std::cout << id_ << '\n';
+			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
 		}
 	};
 };
@@ -203,9 +205,10 @@ private:
 	bool available_ = true;
 	Supply* supplyToDeliver_ = nullptr;
 public:
-	void deliverSupply(Supply* supply) {
+	void deliverSupply(Supply* supply)
+	{
 		this->setAvailable(false);
-		std::cout << "deliver supply\n";
+		std::cout << "deliver supply with id = " << supply->getId() << "\n";
 		std::random_device rd;
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis1(1, 100);
@@ -258,7 +261,7 @@ public:
 	{
 		return garage_;
 	}
-	Truck* chooseTruck()//учесть что фура мб занята
+	Truck* chooseTruck()
 	{
 		for (Truck* i = pointerToNextTruck_; i < garage_ + capacityOfGarage - 1; i++)
 		{
@@ -331,7 +334,7 @@ int main() {
 	Factory f2(2, &sys1);
 	Factory f3(3, &sys1);
 	Truck truck1{};
-	/*Truck truck2{};
+	Truck truck2{};
 	Truck truck3{};
 	Truck truck4{};
 	Truck truck5{};
@@ -339,8 +342,8 @@ int main() {
 	Truck truck7{};
 	Truck truck8{};
 	Truck truck9{};
-	Truck truck10{};*/
-	Truck arr[capacityOfGarage] = { truck1 };//, truck2, truck3, truck4, truck5, truck6, truck7, truck8, truck9, truck10};
+	Truck truck10{};
+	Truck arr[capacityOfGarage] = { truck1 , truck2, truck3, truck4, truck5, truck6, truck7, truck8, truck9, truck10};
 	Garage g(arr);
 	WarehouseUnloadingSystem sys2(&g, &h);
 	std::thread thread1(&Factory::supplyProducts, &f1);
