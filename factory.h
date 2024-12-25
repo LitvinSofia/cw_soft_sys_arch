@@ -1,16 +1,18 @@
-#pragma once
+#ifndef FACTORY_H
+#define FACTORY_H
 #include <random>
 #include <vector>
 #include <Windows.h>
-#include "supply.h"
+class Supply;
 #include "system_for_placing_products.h"
+class SystemForPlacingProducts;
 extern std::mutex mutexForCout;
 struct FactoryStatistic {
 	size_t allRequests{};
 	size_t successfulRequests{};
 	size_t failedRequests{};
-	std::vector<double> durationsProcess{};
-	std::vector<double> durationsWait{};
+	std::vector<double> durationsProcess{};//время которое заявка обслуживалась
+	std::vector<double> durationsWait{};//время до обслуживания заявки чтобы среднее считать
 };
 class Factory {
 private:
@@ -19,21 +21,15 @@ private:
 	SystemForPlacingProducts* ptrToPlacing_;
 	FactoryStatistic statistic_{};
 public:
-	Factory(size_t priority, SystemForPlacingProducts* ptr) :
-		priority_(priority),
-		ptrToPlacing_(ptr)
-	{}
-	void supplyProducts()
-	{
-		while (true) {
-			std::random_device rd;
-			std::mt19937 gen(rd());
-			std::uniform_int_distribution<> dis1(1, 5);
-			int random_number = dis1(gen);
-			Sleep(random_number * 1000);
-			std::cout << "FACTORY " << priority_ << ": supply " << id_ << '\n';
-			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ , this});
-		}
-	};
+	Factory(size_t priority, SystemForPlacingProducts* ptr);
+	void setAllRequests(size_t all);
+	size_t getAllRequests();
+	void setSuccessfulRequests(size_t successful);
+	size_t getSuccessfulRequests();
+	void setFailedRequests(size_t failed);
+	size_t getFailedRequests();
+	void addDurationsProcess(double process);
+	void addDurationsWait(double wait);
+	void supplyProducts();
 };
-size_t Factory::id_ = 0;
+#endif
