@@ -1,13 +1,23 @@
 #pragma once
 #include <random>
+#include <vector>
 #include <Windows.h>
+#include "supply.h"
 #include "system_for_placing_products.h"
 extern std::mutex mutexForCout;
+struct FactoryStatistic {
+	size_t allRequests{};
+	size_t successfulRequests{};
+	size_t failedRequests{};
+	std::vector<double> durationsProcess{};
+	std::vector<double> durationsWait{};
+};
 class Factory {
 private:
 	static size_t id_;
 	size_t priority_;
 	SystemForPlacingProducts* ptrToPlacing_;
+	FactoryStatistic statistic_{};
 public:
 	Factory(size_t priority, SystemForPlacingProducts* ptr) :
 		priority_(priority),
@@ -22,7 +32,7 @@ public:
 			int random_number = dis1(gen);
 			Sleep(random_number * 1000);
 			std::cout << "FACTORY " << priority_ << ": supply " << id_ << '\n';
-			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
+			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ , this});
 		}
 	};
 };

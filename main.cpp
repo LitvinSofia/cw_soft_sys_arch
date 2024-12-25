@@ -13,14 +13,6 @@
 #include "warehouse_unloading_system.h"
 #include "truck.h"
 std::mutex mutexForCout;
-struct FactoryStatistic {
-	uint32_t allRequests{};
-	uint32_t successfulRequests{};
-	uint32_t failedRequests{};
-	std::vector<double> durationsProcess{};
-	std::vector<double> durationsWait{};
-};
-std::map<uint32_t, FactoryStatistic> statisticByUser;
 std::mutex statMut;
 int main() {
 	Warehouse h{};

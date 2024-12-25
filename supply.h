@@ -1,12 +1,15 @@
 #pragma once
+class Factory;
 class Supply {
 private:
 	size_t id_;
 	size_t factoryPriority_;
+	Factory* pointerToFactory_;
 public:
-	Supply(size_t factPriority, size_t id) :
+	Supply(size_t factPriority, size_t id, Factory* ptr) :
 		factoryPriority_(factPriority),
-		id_(id)
+		id_(id),
+		pointerToFactory_(ptr)
 	{}
 	size_t getId()
 	{
@@ -15,6 +18,10 @@ public:
 	size_t getFactoryPriority()
 	{
 		return factoryPriority_;
+	}
+	Factory* getPointerToFactory()
+	{
+		return pointerToFactory_;
 	}
 };
 
