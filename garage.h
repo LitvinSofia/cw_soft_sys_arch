@@ -2,8 +2,8 @@
 #include <iostream>
 #include <mutex>
 extern std::mutex mutexForCout;
+#define capacityOfGarage 10
 #include "truck.h"
-constexpr size_t capacityOfGarage = 10;
 class Garage {
 private:
 	Truck* pointerToNextTruck_;
