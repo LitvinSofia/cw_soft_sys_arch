@@ -48,10 +48,19 @@ private:
 	size_t size_ = 0;
 	Supply* warehouse_[capacityOfWarehouse] = {};
 	Supply** pointerToNextInserted;
+	std::mutex warehouseMutex_;
 public:
 	Warehouse() :
 		pointerToNextInserted(warehouse_)
 	{}
+	void mutexLock()
+	{
+		warehouseMutex_.lock();
+	}
+	void mutexUnlock()
+	{
+		warehouseMutex_.unlock();
+	}
 	Supply* chooseSupply()
 	{
 		size_t priority = max_priority;
@@ -84,14 +93,14 @@ public:
 	}
 	Supply** findPlaceForSupply()
 	{
-		for (Supply** i = pointerToNextInserted; i < &warehouse_[capacityOfWarehouse]; i++)
+		for (Supply** i = pointerToNextInserted; i < warehouse_ + capacityOfWarehouse; i++)
 		{
 			if (*i == nullptr)
 			{
 				return i;
 			}
 		}
-		for (Supply** i = &warehouse_[0]; i < pointerToNextInserted; i++)
+		for (Supply** i = warehouse_; i < pointerToNextInserted; i++)
 		{
 			if (*i == nullptr)
 			{
@@ -151,7 +160,7 @@ public:
 		size_--;
 		printWarehouse();
 		mutexForCout.lock();
-		std::cout << "supply was rejected from warehouse\n";
+		std::cout << "supply  with id = " << (*placeToReject)->getId() << " was rejected\n";
 		mutexForCout.unlock();
 		Supply* ptr = *placeToReject;
 		*placeToReject = nullptr;
@@ -174,19 +183,16 @@ public:
 		{
 			if (!supplyQueue.empty())
 			{
+				ptrToWarehouse->mutexLock();
 				Supply** ptr = checkPlaceForSupply();
 				if (*ptr != nullptr) {
-					size_t id = 0;
-					id = (*ptr)->getId();
 					ptrToWarehouse->rejectSupply(ptr);
-					mutexForCout.lock();
-					std::cout << "rejected supply with id = " << id << "\n";
-					mutexForCout.unlock();
 				}
 				mutex_.lock();
 				ptrToWarehouse->placeSupply(ptr, supplyQueue.front());
 				supplyQueue.pop();
 				mutex_.unlock();
+				ptrToWarehouse->mutexUnlock();
 			}
 		}
 	}
@@ -198,7 +204,7 @@ public:
 			Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
 			if (ptr1 == ptr2)
 			{
-				std::cout << "warehouse overflow\n";
+				std::cout << "!!warehouse overflow!!\n";
 			}
 			return ptr2;
 		}
@@ -210,7 +216,7 @@ public:
 		supplyQueue.push(sup);
 		mutex_.unlock();
 		mutexForCout.lock();
-		std::cout << "supply " << sup->getId() << " was accepted\n";
+		std::cout <<"SystemForPlacingProducts: " << "supply " << sup->getId() << " was accepted\n";
 		mutexForCout.unlock();
 		return true;
 	}
@@ -233,7 +239,7 @@ public:
 			std::uniform_int_distribution<> dis1(1, 5);
 			int random_number = dis1(gen);
 			Sleep(random_number * 1000);
-			std::cout <<  "Factory priority: " << priority_ <<" supply id: " << id_ << '\n';
+			std::cout << "FACTORY " << priority_ << ": supply " << id_ << '\n';
 			ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ });
 		}
 	};
@@ -255,14 +261,17 @@ public:
 	}
 	void deliverSupply(Supply* supply)
 	{
-		this->setAvailable(false);
-		std::cout << "truck " << id_ << " delivers supply with id = " << supply->getId() << "\n";
+		mutexForCout.lock();
+		std::cout << "TRUCK " << id_ << ": delivers supply with id = " << supply->getId() << "\n";
+		mutexForCout.unlock();
 		std::random_device rd;
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis1(1, 100);
 		int random_number = dis1(gen);
 		Sleep(random_number * 1000);
+		mutexForCout.lock();
 		std::cout << " supply " << supply->getId() << " was delivered by truck " << id_ << "\n";
+		mutexForCout.unlock();
 		delete supply;
 		supplyToDeliver_ = nullptr;
 		this->setAvailable(true);
@@ -283,7 +292,7 @@ public:
 	{
 		while (true)
 		{
-			if (this->available_ == true && this->supplyToDeliver_ != nullptr)
+			if (this->available_ == false && this->supplyToDeliver_ != nullptr)
 			{
 				this->deliverSupply(supplyToDeliver_);
 			}
@@ -361,11 +370,20 @@ public:
 	void run()
 	{
 		while (true) {
+			
 			if (pointerToGarage_->atLeastOneIsAvailable() && (!pointerToWarehouse_->isEmpty()))
 			{
+				pointerToWarehouse_->mutexLock();
+				pointerToWarehouse_->printWarehouse();
 				Supply* supplyToDeliver = pointerToWarehouse_->chooseSupply();
+				mutexForCout.lock();
+				std::cout << supplyToDeliver->getId() << " was chosen\n";
+				mutexForCout.unlock();
+				pointerToWarehouse_->printWarehouse();
 				Truck* truckToDeliver = pointerToGarage_->chooseTruck();
 				truckToDeliver->setSupply(supplyToDeliver);
+				truckToDeliver->setAvailable(false);
+				pointerToWarehouse_->mutexUnlock();
 			}
 			else
 			{
