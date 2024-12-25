@@ -12,14 +12,16 @@
 #include "garage.h"
 #include "warehouse_unloading_system.h"
 #include "truck.h"
+#define FACTORY_AMOUNT 3
 std::mutex mutexForCout;
 std::mutex statMut;
+//std::map<size_t, Factory*> statFactory;
 int main() {
 	Warehouse h{};
 	SystemForPlacingProducts sys1(&h);
-	Factory f1(1, &sys1);
-	Factory f2(2, &sys1);
-	Factory f3(3, &sys1);
+	Factory f1(1,1, &sys1);
+	Factory f2(2,2, &sys1);
+	Factory f3(3,3, &sys1);
 	Truck arr[capacityOfGarage] = { Truck{} };
 	Garage g(arr);
 	WarehouseUnloadingSystem sys2(&g, &h);

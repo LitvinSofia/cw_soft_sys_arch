@@ -17,19 +17,26 @@ struct FactoryStatistic {
 class Factory {
 private:
 	static size_t id_;
+	size_t factoryId_;
 	size_t priority_;
 	SystemForPlacingProducts* ptrToPlacing_;
 	FactoryStatistic statistic_{};
 public:
-	Factory(size_t priority, SystemForPlacingProducts* ptr);
+	Factory(size_t id, size_t priority, SystemForPlacingProducts* ptr);
 	void setAllRequests(size_t all);
 	size_t getAllRequests();
 	void setSuccessfulRequests(size_t successful);
 	size_t getSuccessfulRequests();
 	void setFailedRequests(size_t failed);
 	size_t getFailedRequests();
+	std::vector<double> getDurationsProcess();
+	std::vector<double> getDurationsWait();
 	void addDurationsProcess(double process);
 	void addDurationsWait(double wait);
 	void supplyProducts();
+	size_t getId()
+	{
+		return factoryId_;
+	}
 };
 #endif

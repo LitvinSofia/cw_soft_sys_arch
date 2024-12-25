@@ -2,7 +2,9 @@
 #include "supply.h"
 #include <map>
 #include <fstream>
+#define FACTORY_AMOUNT 3
 std::map<uint32_t, uint64_t> statDevice;
+std::map<size_t, Factory*> statFactory;
 void Truck::setId(size_t id)
 {
 	id_ = id;
@@ -19,7 +21,7 @@ void Truck::deliverSupply(Supply* supply)
 	mutexForCout.unlock();
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::exponential_distribution<> dis1(0.01);
+	std::exponential_distribution<> dis1(1);
 	double random_number = dis1(gen);
 	Sleep(random_number * 1000);
 	mutexForCout.lock();
@@ -49,7 +51,27 @@ void Truck::deliverSupply(Supply* supply)
 
 	size_t req1 = supply->getPointerToFactory()->getAllRequests();
 	supply->getPointerToFactory()->setAllRequests(req1 + 1);
-
+	statFactory[supply->getPointerToFactory()->getId()] = supply->getPointerToFactory();
+	if ((supply->getPointerToFactory()->getAllRequests()) % 10 == 0 && supply->getPointerToFactory()->getAllRequests() != 0) {
+		//statMut.lock();
+		std::ofstream out;
+		out.open("factories.txt");
+		for (uint32_t i = 1; i <= FACTORY_AMOUNT; i++) {
+			out << "FACTORY " << i << " statistic: ALL: " << statFactory[i]->getAllRequests() << " success: "
+				<< statFactory[i]->getSuccessfulRequests() << " declined: " << statFactory[i]->getFailedRequests() << '\n';
+			out << "waitDurations: ";
+			for (double j : statFactory[i]->getDurationsWait()) {
+				out << j << ' ';
+			}
+			out << '\n' << "Processing durations: ";
+			for (double j : statFactory[i]->getDurationsProcess()) {
+				out << j << ' ';
+			}
+			out << '\n';
+		}
+		out.close();
+		//statMut.unlock();
+	}
 	delete supply;
 	supplyToDeliver_ = nullptr;
 	this->setAvailable(true);
