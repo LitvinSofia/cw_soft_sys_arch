@@ -29,7 +29,9 @@ Supply** SystemForPlacingProducts::checkPlaceForSupply()
 		Supply** ptr2 = ptrToWarehouse->findPlaceForSupply();
 		if (ptr1 == ptr2)
 		{
+			mutexForCout.lock();
 			std::cout << "!!warehouse overflow!!\n";
+			mutexForCout.unlock();
 		}
 		return ptr2;
 	}

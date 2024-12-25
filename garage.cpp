@@ -8,6 +8,10 @@ Truck* Garage::getGarage()
 {
 	return garage_;
 }
+Truck* Garage::getPointerToNextTruck()
+{
+	return this->pointerToNextTruck_;
+}
 Truck* Garage::chooseTruck()
 {
 	for (Truck* i = pointerToNextTruck_; i < garage_ + capacityOfGarage - 1; i++)
@@ -21,13 +25,20 @@ Truck* Garage::chooseTruck()
 	if (garage_[capacityOfGarage - 1].isAvailable() == true)
 	{
 		pointerToNextTruck_ = garage_;
-		return &garage_[capacityOfGarage - 1];
+		return garage_ + capacityOfGarage - 1;
 	}
 	for (Truck* i = garage_; i < pointerToNextTruck_; i++)
 	{
 		if (i->isAvailable() == true)
 		{
-			pointerToNextTruck_++;
+			if (pointerToNextTruck_ == garage_ + capacityOfGarage - 1)
+			{
+				pointerToNextTruck_ = garage_;
+			}
+			else
+			{
+				pointerToNextTruck_++;
+			}
 			return i;
 		}
 	}

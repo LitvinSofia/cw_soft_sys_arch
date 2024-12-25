@@ -34,9 +34,6 @@ public:
 	void addDurationsProcess(double process);
 	void addDurationsWait(double wait);
 	void supplyProducts();
-	size_t getId()
-	{
-		return factoryId_;
-	}
+	size_t getId();
 };
 #endif

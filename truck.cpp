@@ -21,7 +21,7 @@ void Truck::deliverSupply(Supply* supply)
 	mutexForCout.unlock();
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::exponential_distribution<> dis1(1);
+	std::exponential_distribution<> dis1(1.2);
 	double random_number = dis1(gen);
 	Sleep(random_number * 1000);
 	mutexForCout.lock();
@@ -43,7 +43,6 @@ void Truck::deliverSupply(Supply* supply)
 
 	supply->getPointerToFactory()->addDurationsWait(
 		std::chrono::duration_cast<std::chrono::milliseconds>(start - (supply->getTime())).count());
-	//allTime += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 	supply->getPointerToFactory()->addDurationsProcess(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
 	size_t req = supply->getPointerToFactory()->getSuccessfulRequests();
@@ -53,10 +52,9 @@ void Truck::deliverSupply(Supply* supply)
 	supply->getPointerToFactory()->setAllRequests(req1 + 1);
 	statFactory[supply->getPointerToFactory()->getId()] = supply->getPointerToFactory();
 	if ((supply->getPointerToFactory()->getAllRequests()) % 10 == 0 && supply->getPointerToFactory()->getAllRequests() != 0) {
-		//statMut.lock();
 		std::ofstream out;
 		out.open("factories.txt");
-		for (uint32_t i = 1; i <= FACTORY_AMOUNT; i++) {
+		for (uint32_t i = 0; i < FACTORY_AMOUNT; i++) {
 			out << "FACTORY " << i << " statistic: ALL: " << statFactory[i]->getAllRequests() << " success: "
 				<< statFactory[i]->getSuccessfulRequests() << " declined: " << statFactory[i]->getFailedRequests() << '\n';
 			out << "waitDurations: ";
@@ -70,7 +68,6 @@ void Truck::deliverSupply(Supply* supply)
 			out << '\n';
 		}
 		out.close();
-		//statMut.unlock();
 	}
 	delete supply;
 	supplyToDeliver_ = nullptr;

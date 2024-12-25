@@ -6,7 +6,7 @@
 #undef max
 class Supply;
 extern std::mutex mutexForCout;
-constexpr size_t capacityOfWarehouse = 5;
+constexpr size_t capacityOfWarehouse = 15;
 constexpr size_t max_priority = std::numeric_limits<size_t>::max();
 constexpr size_t max_id = std::numeric_limits<size_t>::max();
 class Warehouse {

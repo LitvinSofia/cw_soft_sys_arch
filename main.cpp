@@ -19,9 +19,9 @@ std::mutex statMut;
 int main() {
 	Warehouse h{};
 	SystemForPlacingProducts sys1(&h);
-	Factory f1(1,1, &sys1);
-	Factory f2(2,2, &sys1);
-	Factory f3(3,3, &sys1);
+	Factory f1(0,0, &sys1);
+	Factory f2(1,1, &sys1);
+	Factory f3(2,2, &sys1);
 	Truck arr[capacityOfGarage] = { Truck{} };
 	Garage g(arr);
 	WarehouseUnloadingSystem sys2(&g, &h);

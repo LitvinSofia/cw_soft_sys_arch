@@ -15,5 +15,6 @@ public:
 	Truck* getGarage();
 	Truck* chooseTruck();
 	bool atLeastOneIsAvailable();
+	Truck* getPointerToNextTruck();
 };
 #endif

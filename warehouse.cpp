@@ -101,6 +101,7 @@ void Warehouse::placeSupply(Supply** place, Supply* newSupply)
 	}
 	mutexForCout.lock();
 	std::cout << "inserted suppply " << newSupply->getId() << " in warehouse\n";
+	std::cout << "Pointer to next inserted supply: "<< pointerToNextInserted - warehouse_ <<"\n";
 	mutexForCout.unlock();
 	printWarehouse();
 }

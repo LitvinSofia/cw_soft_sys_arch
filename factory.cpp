@@ -46,6 +46,10 @@ std::vector<double> Factory::getDurationsWait()
 {
 	return this->statistic_.durationsWait;
 }
+size_t Factory::getId()
+{
+	return factoryId_;
+}
 void Factory::supplyProducts()
 {
 	while (true) {
@@ -53,8 +57,10 @@ void Factory::supplyProducts()
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> dis1(1, 5);
 		int random_number = dis1(gen);
-		Sleep(random_number * 1000);
+		Sleep(random_number*90);
+		mutexForCout.lock();
 		std::cout << "FACTORY " << factoryId_ << ": supply " << id_ << '\n';
+		mutexForCout.unlock();
 		ptrToPlacing_->acceptSupply(new Supply{ priority_, id_++ , this });
 	}
 }
